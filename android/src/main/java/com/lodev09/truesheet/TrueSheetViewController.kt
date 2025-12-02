@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RoundRectShape
 import android.util.TypedValue
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -24,7 +25,6 @@ import com.facebook.react.util.RNLog
 import com.facebook.react.views.view.ReactViewGroup
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.lodev09.truesheet.core.GrabberOptions
 import com.lodev09.truesheet.core.RNScreensFragmentObserver
 import com.lodev09.truesheet.core.TrueSheetGrabberView
 import com.lodev09.truesheet.utils.ScreenUtils
@@ -140,7 +140,6 @@ class TrueSheetViewController(private val reactContext: ThemedReactContext) :
   var dimmed = true
   var dimmedDetentIndex = 0
   var grabber: Boolean = true
-  var grabberOptions: GrabberOptions? = null
   var sheetCornerRadius: Float = -1f
   var sheetBackgroundColor: Int = 0
   var edgeToEdgeFullScreen: Boolean = false
@@ -250,6 +249,15 @@ class TrueSheetViewController(private val reactContext: ThemedReactContext) :
       setCancelable(dismissible)
       behavior.isHideable = dismissible
       behavior.isDraggable = draggable
+
+      setOnKeyListener { _, keyCode, event ->
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && !dismissible) {
+          reactContext.currentActivity?.onBackPressed()
+          true
+        } else {
+          false
+        }
+      }
     }
   }
 
@@ -300,10 +308,10 @@ class TrueSheetViewController(private val reactContext: ThemedReactContext) :
     }
 
     dialog.setOnCancelListener {
-      delegate?.viewControllerWillDismiss()
-
       // Notify parent sheet that it is about to regain focus
       parentSheetView?.viewControllerWillFocus()
+
+      delegate?.viewControllerWillDismiss()
     }
 
     dialog.setOnDismissListener {
@@ -581,7 +589,7 @@ class TrueSheetViewController(private val reactContext: ThemedReactContext) :
 
     if (!grabber || !draggable) return
 
-    val grabberView = TrueSheetGrabberView(reactContext, grabberOptions).apply {
+    val grabberView = TrueSheetGrabberView(reactContext).apply {
       tag = GRABBER_TAG
     }
 
